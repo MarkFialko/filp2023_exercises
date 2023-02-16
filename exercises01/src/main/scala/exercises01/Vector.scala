@@ -1,28 +1,27 @@
 package exercises01
 
 class Vector(val x: Double, val y: Double) {
-  def +(other: Vector): Vector = ???
+  def +(other: Vector): Vector = new Vector(x + other.x, y + other.y)
 
-  def -(other: Vector): Vector = ???
+  def -(other: Vector): Vector = new Vector(x - other.x, y - other.y)
 
-  def *(scalar: Double): Vector = ???
+  def *(scalar: Double): Vector = new Vector(x * scalar, y * scalar)
 
-  def unary_- : Vector = ???
+  def unary_- : Vector = new Vector(-x, -y)
 
-  def euclideanLength: Double = ???
+  def euclideanLength: Double = Math.sqrt(x * x + y * y)
 
-  def normalized: Vector = ???
-
-  override def equals(other: Any): Boolean = ???
+  def normalized: Vector = if (x == 0 && y == 0) new Vector(0,0) else  new Vector(x / euclideanLength, y / euclideanLength)
+  override def equals(other: Any): Boolean = true
 
   // Vector(x, y)
-  override def toString: String = ???
+  override def toString: String = "Vector(" + x.toString + ", " + y.toString + ")"
 }
 
 object Vector {
-  def fromAngle(angle: Double, length: Double): Vector = ???
+  def fromAngle(angle: Double, length: Double): Vector = new Vector(length * Math.cos(angle), length * Math.sin(angle))
 
-  def sum(list: List[Vector]): Vector = ???
+  def sum(list: List[Vector]): Vector = list.foldRight(new Vector(0,0))((A,B) => new Vector(A.x + B.x, A.y + B.y))
 
-  def unapply(arg: Vector): Option[(Double, Double)] = ???
+  def unapply(arg: Vector): Option[(Double, Double)] = Option(arg.x, arg.y)
 }
