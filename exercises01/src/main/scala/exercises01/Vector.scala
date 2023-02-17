@@ -13,16 +13,26 @@ class Vector(val x: Double, val y: Double) {
 
   def normalized: Vector =
     if (x == 0 && y == 0) new Vector(0, 0) else new Vector(x / euclideanLength, y / euclideanLength)
-  override def equals(other: Any): Boolean = true
+  override def equals(other: Any): Boolean = {
+    other match {
+      case other: Vector => {
+        other.isInstanceOf[Vector] &&
+        other.x == this.x &&
+        other.y == this.y
+      }
+      case _ => false
+    }
+  }
 
   // Vector(x, y)
-  override def toString: String = "Vector(" + x.toString + ", " + y.toString + ")"
+  override def toString: String = "Vector(" + x + ", " + y + ")"
 }
 
 object Vector {
   def fromAngle(angle: Double, length: Double): Vector = new Vector(length * Math.cos(angle), length * Math.sin(angle))
 
-  def sum(list: List[Vector]): Vector = list.foldRight(new Vector(0, 0))((A, B) => new Vector(A.x + B.x, A.y + B.y))
+  def sum(list: List[Vector]): Vector =
+    list.foldRight[Vector](new Vector(0, 0))((A, B) => new Vector(A.x + B.x, A.y + B.y))
 
   def unapply(arg: Vector): Option[(Double, Double)] = Option(arg.x, arg.y)
 }
