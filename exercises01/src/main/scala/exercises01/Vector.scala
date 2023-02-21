@@ -16,7 +16,6 @@ class Vector(val x: Double, val y: Double) {
   override def equals(other: Any): Boolean = {
     other match {
       case other: Vector => {
-        other.isInstanceOf[Vector] &&
         other.x == this.x &&
         other.y == this.y
       }
