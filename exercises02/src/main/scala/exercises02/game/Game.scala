@@ -1,5 +1,7 @@
 package exercises02.game
 
+import scala.util.control.Breaks.{break, breakable}
+
 class Game(controller: GameController) {
 
   /**
@@ -16,5 +18,30 @@ class Game(controller: GameController) {
     *
     * @param number загаданное число
     */
-  def play(number: Int): Unit = ???
+  def play(number: Int): Unit = {
+    breakable {
+      while (true) {
+        controller.askNumber()
+        val guess = controller.nextLine()
+
+        if (guess == GameController.IGiveUp) {
+          controller.giveUp(number)
+          break
+        }
+        guess.toIntOption match {
+          case Some(x) =>
+            if (x != number) checkEqual(x, number)
+            else {
+              controller.guessed()
+              break
+            }
+          case None => controller.wrongInput()
+        }
+      }
+    }
+  }
+  private def checkEqual(x: Int, number: Int): Unit = {
+    if (x > number) controller.numberIsSmaller()
+    else controller.numberIsBigger()
+  }
 }
