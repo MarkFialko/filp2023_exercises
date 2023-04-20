@@ -1,5 +1,6 @@
 package state
 
+import state.StatelessRandom.secondInt
 import typeclasses.Monad
 
 object StatefulRandom {
@@ -46,13 +47,23 @@ object StatelessRandom {
   // так далее.
 
   // Реализуйте функцию, которая будет генерировать пару случайных целых чисел
-  def pair(rnd: Random): ((Int, Int), Random) = ???
+  def pair(rnd: Random): ((Int, Int), Random) = {
+    val (firstInt, state1)  = rnd.nextInt
+    val (secondInt, state2) = state1.nextInt
+    ((firstInt, secondInt), state2)
+  }
 
   // Функцию, которая генерирует неотрицальные числа
-  def nonNegativeInt(rnd: Random): (Int, Random) = ???
+  def nonNegativeInt(rnd: Random): (Int, Random) = {
+    val (int, state) = rnd.nextInt
+    (math.abs(int), state)
+  }
 
   // Функцию, которая генерирует случайное число от нуля включительно до единицы невключительно
-  def double(rnd: Random): (Double, Random) = ???
+  def double(rnd: Random): (Double, Random) = {
+    val (int, state) = nonNegativeInt(rnd)
+    (int / Int.MaxValue, state)
+  }
 }
 
 // Нам удалось избавиться от скрытого изменяемого состояния, но приходится передавать теперь его явно.
@@ -69,27 +80,59 @@ object BetterStatelessRandom {
   case class RandomState[A](run: Random => (A, Random))
 
   object RandomState {
-    implicit val monad: Monad[RandomState] = ???
+    implicit val monad: Monad[RandomState] = new Monad[RandomState] {
+      override def pure[A](a: A): RandomState[A] = RandomState((a, _))
+
+      override def map[A, B](fa: RandomState[A])(f: A => B): RandomState[B] =
+        RandomState(rnd => {
+          val (value, nextRnd) = fa.run(rnd)
+          (f(value), nextRnd)
+        })
+
+      override def flatMap[A, B](fa: RandomState[A])(f: A => RandomState[B]): RandomState[B] =
+        RandomState(rnd => {
+          val (value1, nextRnd)  = fa.run(rnd)
+          val (value2, nextRnd2) = f(value1).run(nextRnd)
+          (value2, nextRnd2)
+        })
+    }
   }
 
   // Теперь класс RandomState может быть использован внутри for comprehension
 
   // Функция возвращает случайное целое число
-  val nextInt: RandomState[Int] = ???
+  val nextInt: RandomState[Int] = RandomState(_.nextInt)
 
   // Функция возвращает случайное неотрицальное целое число
-  val nonNegativeInt: RandomState[Int] = ???
+  val nonNegativeInt: RandomState[Int] = for {
+    value <- nextInt
+  } yield math.abs(value)
 
   // Функция возвращает пару случайных неотрицальных целых чисел
-  val pair: RandomState[(Int, Int)] = ???
+  val pair: RandomState[(Int, Int)] = for {
+    value1 <- nextInt
+    value2 <- nextInt
+  } yield (value1, value2)
 
   // Функция возвращает случайное число от нуля до единицы
-  val double: RandomState[Double] = ???
+  val double: RandomState[Double] = for {
+    value <- nonNegativeInt
+  } yield value / Int.MaxValue
 
   // Функция возвращает список случайной длины из случайных целых чисел
-  val randomList: RandomState[List[Int]] = ???
+  val randomList: RandomState[List[Int]] =
+    for {
+      len     <- nextInt
+      rndList <- sequence(List.fill(len)(nextInt))
+    } yield rndList
 
   // Функция должна сконвертировать список из случайных состояний в случайное состояние, которое
   // возвращает список.
-  def sequence[A](xs: List[RandomState[A]]): RandomState[List[A]] = ???
+  def sequence[A](xs: List[RandomState[A]]): RandomState[List[A]] =
+    xs.foldLeft(RandomState.monad.pure(List[A]()))((rndList, rnd) =>
+      for {
+        list <- rndList
+        elem <- rnd
+      } yield elem :: list
+    )
 }
