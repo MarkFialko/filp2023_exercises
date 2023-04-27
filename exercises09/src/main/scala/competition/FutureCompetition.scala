@@ -6,30 +6,24 @@ import twitter.domain.User
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Конкурс! Кто наберет больше лайков под своим постом - тот победил
-  *
-  * Каждый пользовать постит твит "${user.id} will win!", и его фолловеры его лайкают
-  * юзеры постят твиты параллельно, и так же параллельно их лайкают фолловеры
-  *
-  * Но случилась беда: пользователь с именем bot нарушил правила конкурса, и все его лайки надо удалить
-  *
-  * В конце надо вывести победителя
-  * Если победителей несколько, то того, у которого твит был раньше
-  * Если победителей нет, то вернуть ошибку TopAuthorNotFound
-  *
-  * используйте методы
-  * CompetitionMethods.unlikeAll
-  * CompetitionMethods.topAuthor
-  */
 class FutureCompetition(service: TwitterService[Future], methods: CompetitionMethods[Future])(
     implicit ec: ExecutionContext
 ) extends Competition[Future] {
-  def winner(
-      users: List[User],
-      followers: Map[User, List[User]],
-      botUser: User
-  ): Future[User] = ???
+  def winner(users: List[User], followers: Map[User, List[User]], botUser: User): Future[User] =
+    for {
+      tweetsLike <- Future.traverse(users)(user =>
+        for {
+          tweet <- service.tweet(user, s"${user.id} will win!")
+          _     <- Future.sequence(followers(user).map(x => service.like(x, tweet)))
+        } yield tweet
+      )
+      _         <- methods.unlikeAll(botUser, tweetsLike)
+      topAuthor <- methods.topAuthor(tweetsLike)
+      result <- topAuthor match {
+        case Some(value) => Future.successful(value)
+        case None        => Future.failed(TopAuthorNotFound)
+      }
+    } yield result
 }
 
 object FutureCompetitionStart extends App {

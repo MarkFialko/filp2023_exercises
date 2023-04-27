@@ -6,25 +6,15 @@ import competition.domain.ScenarioError.TopAuthorNotFound
 import service.TwitterService
 import twitter.domain._
 
-/**
-  * Конкурс! Кто наберет больше лайков под своим постом - тот победил
-  *
-  * Каждый пользовать постит твит "${user.id} will win!", и его фолловеры его лайкают
-  * юзеры постят твиты параллельно, и так же параллельно их лайкают фолловеры
-  *
-  * Но случилась беда: пользователь с именем bot нарушил правила конкурса, и все его лайки надо удалить
-  *
-  * В конце надо вывести победителя
-  * Если победителей несколько, то того, у которого твит был раньше
-  * Если победителей нет, то вернуть ошибку TopAuthorNotFound
-  *
-  * используйте методы
-  * CompetitionMethods.unlikeAll
-  * CompetitionMethods.topAuthor
-  */
-class IOCompetition(service: TwitterService[IO], methods: CompetitionMethods[IO])
-    extends Competition[IO] {
-  def winner(users: List[User], followers: Map[User, List[User]], botUser: User): IO[User] = ???
+class IOCompetition(service: TwitterService[IO], methods: CompetitionMethods[IO]) extends Competition[IO] {
+  def winner(users: List[User], followers: Map[User, List[User]], botUser: User): IO[User] =
+    for {
+      tweetsIds <- users.parTraverse(x => service.tweet(x, f"${x.id} will win!").map(y => (x, y)))
+      _         <- tweetsIds.parTraverse(x => followers(x._1).parTraverse(service.like(_, x._2)))
+      _         <- methods.unlikeAll(botUser, tweetsIds.map(x => x._2))
+      user      <- methods.topAuthor(tweetsIds.map(x => x._2))
+      winner    <- IO.fromOption(user)(TopAuthorNotFound)
+    } yield winner
 }
 
 object IOCompetitionRun extends IOApp {

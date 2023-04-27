@@ -19,5 +19,4 @@ object domain {
   }
 
   case class TweetInfo(id: TweetId, created: Instant, text: String, author: User, likedBy: Set[User])
-
 }

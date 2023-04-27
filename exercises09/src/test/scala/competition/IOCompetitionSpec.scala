@@ -12,7 +12,7 @@ import twitter.{LocalTwitterApi, TwitterApi}
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext.fromExecutor
 
-class IOCompetitionSpec extends AsyncWordSpec with AsyncIOSpec with Matchers{
+class IOCompetitionSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
   val oleg: User = User("oleg")
   val ivan: User = User("ivan")
   val igor: User = User("igor")
@@ -91,7 +91,8 @@ class IOCompetitionSpec extends AsyncWordSpec with AsyncIOSpec with Matchers{
       )
 
       new IOCompetition(service, methods)
-        .winner(users, followers, bot).evalOn(ctx1)
+        .winner(users, followers, bot)
+        .evalOn(ctx1)
         .asserting(_ shouldBe oleg)
     }
 
@@ -108,7 +109,8 @@ class IOCompetitionSpec extends AsyncWordSpec with AsyncIOSpec with Matchers{
       )
 
       new IOCompetition(service, methods)
-        .winner(users, followers, bot).evalOn(ctx2)
+        .winner(users, followers, bot)
+        .evalOn(ctx2)
         .asserting(_ shouldBe ivan)
     }
 
@@ -125,7 +127,8 @@ class IOCompetitionSpec extends AsyncWordSpec with AsyncIOSpec with Matchers{
       )
 
       new IOCompetition(service, methods)
-        .winner(users, followers, bot).evalOn(ctx2)
+        .winner(users, followers, bot)
+        .evalOn(ctx2)
         .asserting(_ shouldBe ivan)
     }
   }
