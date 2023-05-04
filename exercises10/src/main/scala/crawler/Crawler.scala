@@ -3,6 +3,8 @@ package crawler
 import cats.effect.{ContextShift, IO}
 import cats.implicits._
 
+import scala.util.matching.Regex
+
 /*
  * В данной работе необходимо написать web-crawler.
  *
@@ -50,6 +52,40 @@ import cats.implicits._
  *   - Можете определять доменную модель, как считаете нужным.
  */
 class Crawler(client: HttpClient[IO])(implicit cs: ContextShift[IO]) {
+  def crawl(root: HttpClient.URL): IO[Set[HttpClient.URL]] = {
+    def crawl_inner(
+        urls: List[HttpClient.URL],
+        visited: Set[HttpClient.URL],
+        banned: Set[HttpClient.URL],
+        attempt: Integer
+    ): IO[Set[HttpClient.URL]] = {
+      if (attempt < 3) {
+        IO(
+          urls.headOption match {
+            case None => visited
+            case Some(x) =>
+              client
+                .get(x)
+                .map(r => UrlSearch.search(root, x, r))
+                .flatMap(inner_links =>
+                  crawl_inner(
+                    (inner_links.toList ::: urls).toSet.diff(visited + x).diff(banned).toList,
+                    visited + x,
+                    banned,
+                    0
+                  )
+                )
+                .unsafeRunSync()
+          }
+        ).handleErrorWith(_ => crawl_inner(urls, visited, banned, attempt + 1))
+      } else {
+        urls match {
+          case h :: t => crawl_inner(t, visited, banned + h, 0)
+        }
+      }
+    }
 
-  def crawl(root: HttpClient.URL): IO[Set[HttpClient.URL]] = ???
+    crawl_inner(List(root), Set(root), Set(), 0)
+  }
+
 }
