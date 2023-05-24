@@ -14,9 +14,9 @@ class WorkshopServiceImpl[F[_]: Monad](
 ) extends WorkshopService[F] {
   def buyAllGoods(createUser: CreateUser): F[BuyResponse] =
     for {
-      token <- userRepo.createUser(createUser)
-      user <- userRepo.getUser(token)
-      goods <- goodsRepo.list(token)
+      token      <- userRepo.createUser(createUser)
+      user       <- userRepo.getUser(token)
+      goods      <- goodsRepo.list(token)
       categoryId <- goodCategoryRepo.userCategoryId(user.id)
       buyRequest = BuyRequest(goodsToBuy(goods, categoryId, user.balance))
       res <- goodsRepo.buy(token, buyRequest)
