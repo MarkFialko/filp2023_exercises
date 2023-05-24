@@ -9,10 +9,15 @@ import sttp.tapir.{Endpoint, endpoint}
 import workshop.domain.Domain.{BuyResponse, CreateUser}
 import workshop.http.server.{HttpModule, Response, _}
 import workshop.services.WorkshopService
+import cats.syntax.all._
 
 class WorkshopModule[F[_]: Concurrent: ContextShift: Timer](service: WorkshopService[F]) extends HttpModule[F] {
   @SuppressWarnings(Array("Disable.Any"))
-  val buyAllEndpoint: Endpoint[CreateUser, Unit, Response[BuyResponse], Any] = ???
+  val buyAllEndpoint: Endpoint[CreateUser, Unit, Response[BuyResponse], Any] =
+    endpoint.post
+      .in("buy-all-goods")
+      .in(jsonBody[CreateUser])
+      .out(jsonBody[Response[BuyResponse]])
 
   override def httpRoutes(implicit serverOptions: Http4sServerOptions[F]): HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(List(buyAllEndpoint.handle(service.buyAllGoods)))

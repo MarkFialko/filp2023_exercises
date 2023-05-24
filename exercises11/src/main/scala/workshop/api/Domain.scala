@@ -21,7 +21,13 @@ object Domain {
     @JsonCodec(decodeOnly = true)
     case class Error(payload: ErrorPayload) extends ApiResponse[Nothing]
 
-    implicit def responseDecoder[A: Decoder]: Decoder[ApiResponse[A]] = ???
+    implicit def responseDecoder[A: Decoder]: Decoder[ApiResponse[A]] =
+      c =>
+        c.downField("status").as[Status].flatMap {
+          case Status.Ok    => c.as[ApiResponse.Success[A]]
+          case Status.Error => c.as[ApiResponse.Error]
+        }
+
   }
 
   @JsonCodec(decodeOnly = true)
