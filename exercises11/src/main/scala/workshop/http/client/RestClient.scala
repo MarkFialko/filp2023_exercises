@@ -34,7 +34,18 @@ object RestClient {
         out      <- parse[Out](response.body)
       } yield out
 
-    def post[In: Encoder, Out: Decoder](uri: Uri, body: In, headers: Map[String, String] = Map.empty): F[Out] = ???
+    def post[In: Encoder, Out: Decoder](uri: Uri, body: In, headers: Map[String, String] = Map.empty): F[Out] = {
+      val inJson = body.asJson.noSpaces
+
+      for {
+        _ <- Logger[F].info(s"Sending HTTP Request POST $uri Body $inJson")
+        response <- backend
+          .send(basicRequest.post(uri).headers(headers).body(inJson).contentType("application/Json"))
+        _   <- logResponse(response)
+        _   <- validateStatus(response.code)
+        out <- parse[Out](response.body)
+      } yield out
+    }
 
     private def parse[Out: Decoder](body: Either[String, String]): F[Out] =
       body match {
