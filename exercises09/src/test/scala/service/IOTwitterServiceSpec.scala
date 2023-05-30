@@ -20,9 +20,11 @@ class IOTwitterServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         tweet <- service.getTweet(id)
       } yield (tweet, id)
 
-      res.asserting{ _ should matchPattern {
-        case (Found(TweetInfo(idR, _, _, _, _)), id) if idR == id => ()
-      }}
+      res.asserting {
+        _ should matchPattern {
+          case (Found(TweetInfo(idR, _, _, _, _)), id) if idR == id => ()
+        }
+      }
     }
 
     "tweet two and get two" in {
@@ -30,13 +32,14 @@ class IOTwitterServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
       val service: TwitterService[IO] = new TwitterServiceIO(api)
 
       val res = for {
-          id    <- service.tweet(User("abc"), "abc")
-          id2   <- service.tweet(User("abc"), "abc")
-          tweet <- service.getTweets(List(id, id2))
+        id    <- service.tweet(User("abc"), "abc")
+        id2   <- service.tweet(User("abc"), "abc")
+        tweet <- service.getTweets(List(id, id2))
       } yield (tweet, id, id2)
 
-      res.asserting { case (response, id1, id2) =>
-        response.found.map(_.id) shouldBe Set(id1, id2)
+      res.asserting {
+        case (response, id1, id2) =>
+          response.found.map(_.id) shouldBe Set(id1, id2)
       }
     }
 
@@ -91,16 +94,15 @@ class IOTwitterServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
 
       val user = User("abc")
       val responses = for {
-          id           <- service.tweet(user, "abc")
-          _            <- service.like(user, id)
-          likedTweet   <- service.getTweet(id)
-          _            <- service.unlike(user, id)
-          unlikedTweet <- service.getTweet(id)
-        } yield (likedTweet, unlikedTweet)
+        id           <- service.tweet(user, "abc")
+        _            <- service.like(user, id)
+        likedTweet   <- service.getTweet(id)
+        _            <- service.unlike(user, id)
+        unlikedTweet <- service.getTweet(id)
+      } yield (likedTweet, unlikedTweet)
 
       responses.asserting(_ should matchPattern {
-        case (Found(info1), Found(info2)) if
-          info1.likedBy == Set(user) && info2.likedBy.isEmpty => ()
+        case (Found(info1), Found(info2)) if info1.likedBy == Set(user) && info2.likedBy.isEmpty => ()
       })
     }
 
@@ -110,17 +112,16 @@ class IOTwitterServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
 
       val user = User("abc")
       val responses = for {
-          id           <- service.tweet(user, "abc")
-          _            <- service.like(user, id)
-          likedTweet   <- service.getTweet(id)
-          _            <- service.unlike(user, id)
-          _            <- service.unlike(user, id)
-          unlikedTweet <- service.getTweet(id)
-        } yield (likedTweet, unlikedTweet)
+        id           <- service.tweet(user, "abc")
+        _            <- service.like(user, id)
+        likedTweet   <- service.getTweet(id)
+        _            <- service.unlike(user, id)
+        _            <- service.unlike(user, id)
+        unlikedTweet <- service.getTweet(id)
+      } yield (likedTweet, unlikedTweet)
 
       responses.asserting(_ should matchPattern {
-        case (Found(info1), Found(info2)) if
-          info1.likedBy == Set(user) && info2.likedBy.isEmpty => ()
+        case (Found(info1), Found(info2)) if info1.likedBy == Set(user) && info2.likedBy.isEmpty => ()
       })
     }
   }
