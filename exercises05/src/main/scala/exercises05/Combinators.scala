@@ -15,5 +15,12 @@ object Combinators {
   //
   // Напишите функцию, используя комбинаторы стандартной библиотеки,
   // которая проведёт полную реакцию
-  def react(ipt: String): String = ???
+  def react(ipt: String): String =
+    ipt.foldLeft("")((opt, elem) =>
+      opt.lastOption match {
+        case Some(value) =>
+          if (value != elem && value.toLower == elem.toLower) opt.slice(0, opt.length - 1) else opt + elem
+        case _ => opt + elem
+      }
+    )
 }
